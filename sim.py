@@ -6,16 +6,26 @@ from tortoise import Pen, init, mainloop, screen
 
 class Robot:
     def __init__(self):
+        screen.robots.append(self)
         self.t = Pen()
 
-        self.width = 1.5
+        self.width = 1.5  # for simulation, distance between wheels
 
-        self.r = 0  # radians
+        self.reset()
+
+    def reset(self):
+        self.r = 0  # rotation in radians
         self.p = Vector()  # position
         self.v = Vector()  # velocity
         self.a = Vector()  # acceleration
 
         self.reset_time()
+
+        self.t.up()
+        self._update_t()
+        self.t.down()
+
+        self.t.clear()
 
     def reset_time(self):
         self.start_time = time.time()
@@ -25,9 +35,13 @@ class Robot:
     def time(self):
         return time.time() - self.start_time
 
+    @property
+    def verror(self):
+        return np.abs(self.a - self.v)
+
     def _update_v(self, dt):
-        SPEED = 20  # higher = velocity changes faster
-        dt *= SPEED
+        SPEED = 10  # higher = higher acceleration
+        dt = clamp(dt * SPEED)
 
         self.v[0] = lerp(dt, self.v[0], self.a[0])
         self.v[1] = lerp(dt, self.v[1], self.a[1])
@@ -41,7 +55,7 @@ class Robot:
     def _update_p(self, dt):
         # https://robotics.stackexchange.com/a/1679
 
-        SPEED = 5  # higher = high max velocity
+        SPEED = 5  # higher = higher velocity
         l, r = dt * self.v * SPEED
 
         if np.allclose(l, r):
@@ -58,6 +72,33 @@ class Robot:
     def _update_t(self):
         self.t.goto(*self.p)
         self.t.seth(self.r)
+
+        self._wraparound()
+
+    def _wraparound(self):
+        wrap_size = screen.size_canvas * 1.15
+        changed = False
+
+        while self.p[0] > wrap_size:
+            self.p[0] -= 2 * wrap_size
+            changed = True
+
+        while self.p[0] < -wrap_size:
+            self.p[0] += 2 * wrap_size
+            changed = True
+
+        while self.p[1] > wrap_size:
+            self.p[1] -= 2 * wrap_size
+            changed = True
+
+        while self.p[1] < -wrap_size:
+            self.p[1] += 2 * wrap_size
+            changed = True
+
+        if changed:
+            self.t.up()
+            self.t.goto(*self.p)
+            self.t.down()
 
     def _tick(self, dt):
         self._update_v(dt)
@@ -94,7 +135,8 @@ class Robot:
         self.drive(v, v)
 
 
-init()
+# change size_window if the window doesn't fit on screen
+init(size_canvas=10, size_window=1000)
 r = Robot()
 
 
@@ -105,9 +147,27 @@ def main():
     def timer():
         r.drive(*screen.mousepos)
         print(r.p, r.v, r.a)
+        # if not np.allclose(r.verror, Vector()):
+        # print(r.verror)
 
     mainloop(r, timer)
 
 
 if __name__ == "__main__":
     main()
+
+# 'q' to quit
+# 'r' to reset
+# 'c' to clear
+
+# mouse x coordinate is left wheel velocity
+# mouse y coordinate is right wheel velocity
+
+# printout: position, velocity, acceleration
+
+# simulates differential drive
+# models acceleration
+
+# change canvas size, window size in init() call above
+
+# write your own timer()

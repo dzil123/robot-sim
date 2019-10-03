@@ -5,7 +5,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${cwd}/sim.py",
             "console": "integratedTerminal"
         }
     ]

@@ -1,5 +1,7 @@
 import numpy as np
 
+np.set_printoptions(precision=4, suppress=True, sign=" ")
+
 
 def Vector():
     return np.zeros(shape=(2))

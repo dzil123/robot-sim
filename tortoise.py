@@ -10,14 +10,16 @@ MOUSE_RIGHT = 3
 screen = turtle.Screen()
 
 
-def init(size_canvas=10, size_window=1000):
+def init(size_canvas, size_window):
     _init_canvas(size_canvas, size_window)
     turtle.register_shape("robot", _robot_shape())
-    turtle.shapesize(0.5, 0.5, 4)
     _setup_events(size_canvas)
 
 
 def _init_canvas(size_canvas, size_window):
+    screen.size_canvas = size_canvas
+    screen.robots = []
+
     turtle.setup(size_window, size_window)
     turtle.setworldcoordinates(-size_canvas, -size_canvas, size_canvas, size_canvas)
 
@@ -94,13 +96,25 @@ def _setup_events(size_canvas):
         screen.cv.bind(f"<Button-{btn}>", mouseevent(btn, True), "+")
         screen.cv.bind(f"<Button{btn}-ButtonRelease>", mouseevent(btn, False), "+")
 
-    # Application exit
+    # Application lifecycle
 
     def quit():
         print("QUIT")
         screen.bye()
 
     screen.onkey(quit, "q")
+
+    def clear():
+        for r in screen.robots:
+            r.t.clear()
+
+    screen.onkey(clear, "c")
+
+    def reset():
+        for r in screen.robots:
+            r.reset()
+
+    screen.onkey(reset, "r")
 
 
 def Pen():
