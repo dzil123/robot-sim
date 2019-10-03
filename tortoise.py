@@ -1,5 +1,6 @@
 import turtle
 
+from maths import clamp
 
 MOUSE_LEFT = 1
 MOUSE_MIDDLE = 2
@@ -9,9 +10,11 @@ MOUSE_RIGHT = 3
 screen = turtle.Screen()
 
 
-def init(size_canvas=5, size_window=500):
+def init(size_canvas=10, size_window=1000):
     _init_canvas(size_canvas, size_window)
     turtle.register_shape("robot", _robot_shape())
+    turtle.shapesize(0.5, 0.5, 4)
+    _setup_events(size_canvas)
 
 
 def _init_canvas(size_canvas, size_window):
@@ -62,17 +65,22 @@ def _robot_shape():
     return shape
 
 
-def _setup_events():
+def _setup_events(size_canvas):
+    # Mouse position
+
     screen.mousepos = (0, 0)
-    screen.mousedown = {}
 
     def onmove(event):
         screen.mousepos = (
-            screen.cv.canvasx(event.x) / screen.xscale,
-            -screen.cv.canvasy(event.y) / screen.yscale,
+            clamp(screen.cv.canvasx(event.x) / screen.xscale / size_canvas),
+            clamp(-screen.cv.canvasy(event.y) / screen.yscale / size_canvas),
         )
 
     screen.cv.bind("<Motion>", onmove, "+")
+
+    # Mouse buttons
+
+    screen.mousedown = {}
 
     def mouseevent(button, on):
         def handler(event):
@@ -80,19 +88,29 @@ def _setup_events():
 
         return handler
 
-    for button in (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT):
-        screen.mousedown[button] = False
+    for btn in (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT):
+        screen.mousedown[btn] = False
 
-        screen.cv.bind(f"<Button-{button}>", mouseevent(button, True), "+")
-        screen.cv.bind(
-            f"<Button{button}-ButtonRelease>", mouseevent(button, False), "+"
-        )
+        screen.cv.bind(f"<Button-{btn}>", mouseevent(btn, True), "+")
+        screen.cv.bind(f"<Button{btn}-ButtonRelease>", mouseevent(btn, False), "+")
+
+    # Application exit
+
+    def quit():
+        print("QUIT")
+        screen.bye()
+
+    screen.onkey(quit, "q")
 
 
 def Pen():
     pen = turtle.Pen(shape="robot", undobuffersize=0)
     pen.speed(0)
     pen.radians()  # heading given in radians
+
+    # fix bug in turtle where custom canvas scaling breaks angles
+    # turtle.py, Line 1559 should read `if mode in ["standard", "world"]:`
+    pen._setmode(pen._setmode())
 
     return pen
 
@@ -109,4 +127,5 @@ def mainloop(r, timer=lambda: None, delay=10):
 
     r.reset_time()
     starttimer()
+    screen.listen()
     turtle.mainloop()

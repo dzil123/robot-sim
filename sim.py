@@ -1,6 +1,7 @@
-from tortoise import init, Pen, mainloop, screen
-from maths import Vector, lerp, np
 import time
+
+from maths import Vector, clamp, lerp, np
+from tortoise import Pen, init, mainloop, screen
 
 
 class Robot:
@@ -10,9 +11,9 @@ class Robot:
         self.width = 1.5
 
         self.r = 0  # radians
-        self.p = Vector()
-        self.v = Vector()
-        self.a = Vector()
+        self.p = Vector()  # position
+        self.v = Vector()  # velocity
+        self.a = Vector()  # acceleration
 
         self.reset_time()
 
@@ -25,10 +26,11 @@ class Robot:
         return time.time() - self.start_time
 
     def _update_v(self, dt):
-        SPEED = 1
+        SPEED = 20  # higher = velocity changes faster
+        dt *= SPEED
 
-        self.v[0] = lerp(SPEED * dt, self.v[0], self.a[0])
-        self.v[1] = lerp(SPEED * dt, self.v[1], self.a[1])
+        self.v[0] = lerp(dt, self.v[0], self.a[0])
+        self.v[1] = lerp(dt, self.v[1], self.a[1])
 
         if np.allclose(self.v[0], self.a[0]):
             self.v[0] = self.a[0]
@@ -39,7 +41,8 @@ class Robot:
     def _update_p(self, dt):
         # https://robotics.stackexchange.com/a/1679
 
-        l, r = dt * self.a
+        SPEED = 5  # higher = high max velocity
+        l, r = dt * self.v * SPEED
 
         if np.allclose(l, r):
             self.p[0] += l * np.cos(self.r)
@@ -77,13 +80,15 @@ class Robot:
 
         self._tick(dt)
 
+    # everything below this line is the "public interface"
+
     def goto(self, *pos):
         self.t.goto(*pos)
         self._update_t()
 
     def drive(self, l, r):
-        self.a[0] = l
-        self.a[1] = r
+        self.a[0] = clamp(l)
+        self.a[1] = clamp(r)
 
     def drive_straight(self, v):
         self.drive(v, v)
@@ -98,7 +103,8 @@ def main():
     r.t.clear()
 
     def timer():
-        pass
+        r.drive(*screen.mousepos)
+        print(r.p, r.v, r.a)
 
     mainloop(r, timer)
 
