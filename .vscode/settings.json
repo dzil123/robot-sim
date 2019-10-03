@@ -1,5 +1,6 @@
 {
-    "code-runner.clearPreviousOutput": true,
-    "code-runner.saveAllFilesBeforeRun": true,
-    "python.pythonPath": "../opensight_env/bin/python"
+	"code-runner.clearPreviousOutput": true,
+	"code-runner.saveAllFilesBeforeRun": true,
+	"python.pythonPath": "../opensight_env/bin/python",
+	"python.linting.enabled": false,
 }
