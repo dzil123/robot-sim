@@ -6,6 +6,10 @@ MOUSE_LEFT = 1
 MOUSE_MIDDLE = 2
 MOUSE_RIGHT = 3
 
+KEY_UP = "Up"
+KEY_DOWN = "Down"
+KEY_LEFT = "Left"
+KEY_RIGHT = "Right"
 
 screen = turtle.Screen()
 
@@ -83,18 +87,26 @@ def _setup_events(size_canvas):
     # Mouse buttons
 
     screen.mousedown = {}
+    screen.keys = screen.mousedown
 
     def mouseevent(button, on):
-        def handler(event):
-            screen.mousedown[button] = on
+        def handler(event=None):
+            screen.keys[button] = on
 
         return handler
+    keypress = mouseevent
 
     for btn in (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT):
         screen.mousedown[btn] = False
 
         screen.cv.bind(f"<Button-{btn}>", mouseevent(btn, True), "+")
         screen.cv.bind(f"<Button{btn}-ButtonRelease>", mouseevent(btn, False), "+")
+
+    for btn in (KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT):
+        screen.keys[btn] = False
+
+        screen.onkeypress(keypress(btn, True), btn)
+        screen.onkeyrelease(keypress(btn, False), btn)
 
     # Application lifecycle
 

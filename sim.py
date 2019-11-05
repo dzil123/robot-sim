@@ -1,7 +1,8 @@
+import math
 import time
 
 from maths import Vector, clamp, lerp, np
-from tortoise import Pen, init, mainloop, screen
+from tortoise import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, Pen, init, mainloop, screen
 
 
 class Robot:
@@ -134,6 +135,40 @@ class Robot:
     def drive_straight(self, v):
         self.drive(v, v)
 
+    def drive_arcade(self, throttle, turn):
+        epsilon = 0.0001
+
+        max_input = math.copysign(max(abs(throttle), abs(turn)), (throttle + epsilon))
+
+        if (throttle + epsilon) * turn >= 0:
+            self.drive(max_input, throttle - turn)
+        else:
+            self.drive(throttle + turn, max_input)
+
+
+def drive_screen():
+    r.drive(*screen.mousepos)
+
+
+def drive_screen_arcade():
+    r.drive_arcade(*(screen.mousepos[::-1]))
+
+
+def drive_key_arcade():
+    turn = 0
+    if screen.keys[KEY_LEFT]:
+        turn -= 1
+    if screen.keys[KEY_RIGHT]:
+        turn += 1
+
+    throttle = 0
+    if screen.keys[KEY_UP]:
+        throttle += 1
+    if screen.keys[KEY_DOWN]:
+        throttle -= 1
+
+    r.drive_arcade(throttle, turn)
+
 
 # change size_window if the window doesn't fit on screen
 init(size_canvas=10, size_window=1000)
@@ -145,10 +180,8 @@ def main():
     r.t.clear()
 
     def timer():
-        r.drive(*screen.mousepos)
+        drive_screen_arcade()
         print(r.p, r.v, r.a)
-        # if not np.allclose(r.verror, Vector()):
-        # print(r.verror)
 
     mainloop(r, timer)
 
