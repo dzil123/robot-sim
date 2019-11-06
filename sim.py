@@ -1,7 +1,6 @@
-import math
 import time
 
-from maths import Vector, clamp, lerp, np
+from maths import Vector, clamp, copysign, deadband, lerp, np
 from tortoise import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, Pen, init, mainloop, screen
 
 
@@ -41,7 +40,7 @@ class Robot:
         return np.abs(self.a - self.v)
 
     def _update_v(self, dt):
-        SPEED = 10  # higher = higher acceleration
+        SPEED = 5  # higher = higher acceleration
         dt = clamp(dt * SPEED)
 
         self.v[0] = lerp(dt, self.v[0], self.a[0])
@@ -56,7 +55,7 @@ class Robot:
     def _update_p(self, dt):
         # https://robotics.stackexchange.com/a/1679
 
-        SPEED = 5  # higher = higher velocity
+        SPEED = 10  # higher = higher velocity
         l, r = dt * self.v * SPEED
 
         if np.allclose(l, r):
@@ -114,6 +113,7 @@ class Robot:
         MAX_DT = 0.05
 
         while dt > MAX_DT:
+            print("Slow tick")
             self._tick(MAX_DT)
             dt -= MAX_DT
 
@@ -138,7 +138,7 @@ class Robot:
     def drive_arcade(self, throttle, turn):
         epsilon = 0.0001
 
-        max_input = math.copysign(max(abs(throttle), abs(turn)), (throttle + epsilon))
+        max_input = copysign(max(abs(throttle), abs(turn)), (throttle + epsilon))
 
         if (throttle + epsilon) * turn >= 0:
             self.drive(max_input, throttle - turn)
@@ -146,12 +146,18 @@ class Robot:
             self.drive(throttle + turn, max_input)
 
 
+D = deadband(deadband=0.1, maxIn=0.9, square=False)
+
+
 def drive_screen():
     r.drive(*screen.mousepos)
 
 
 def drive_screen_arcade():
-    r.drive_arcade(*(screen.mousepos[::-1]))
+    throttle = D(screen.mousepos[1])
+    turn = D(screen.mousepos[0])
+
+    r.drive_arcade(throttle, turn)
 
 
 def drive_key_arcade():
@@ -179,9 +185,17 @@ def main():
     r.goto(-5, -5)
     r.t.clear()
 
+    a = 0
+
     def timer():
-        drive_screen_arcade()
-        print(r.p, r.v, r.a)
+        nonlocal a
+        # drive_screen_arcade()
+        drive_key_arcade()
+        a += 1
+
+        if a > 5:
+            print(*r.p, *r.v, *r.a, sep=",")
+            a = 0
 
     mainloop(r, timer)
 

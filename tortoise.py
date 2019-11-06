@@ -94,6 +94,7 @@ def _setup_events(size_canvas):
             screen.keys[button] = on
 
         return handler
+
     keypress = mouseevent
 
     for btn in (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT):
